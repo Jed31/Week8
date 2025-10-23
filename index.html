@@ -6,66 +6,136 @@
   <title>5분, 그냥 숨 쉬기</title>
   <style>
     :root{
-      --bg1:#0f172a; --bg2:#1e293b; --fg:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+      --fg:#e5e7eb;          /* 텍스트 */
+      --muted:#a5b4fc;       /* 보조 텍스트(살짝 라일락) */
+      --glow:#60a5fa;        /* 하이라이트 */
+      --border:rgba(255,255,255,.22);
+      --glass:rgba(255,255,255,.08);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; color:var(--fg);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-      background: radial-gradient(1200px 800px at 20% 10%, #0b1224, transparent),
-                  radial-gradient(900px 700px at 80% 90%, #0a1a2f, transparent),
-                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      background:#020617;
       display:grid; place-items:center;
+      overflow:hidden;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
       user-select:none;
     }
+
+    /* ===== 배경 비디오 ===== */
+    .bg{
+      position:fixed; inset:0; z-index:-2;
+      overflow:hidden; pointer-events:none;
+    }
+    .bg video{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; filter:brightness(.85) saturate(1.1);
+      transform:scale(1.02); /* 아주 미세한 확대로 가장자리 검은띠 방지 */
+    }
+    /* 분위기 그라디언트 오버레이 */
+    .bg::after{
+      content:""; position:absolute; inset:0; z-index:1;
+      background:
+        radial-gradient(1200px 800px at 15% 10%, rgba(2,6,23,.45), transparent 70%),
+        radial-gradient(900px 600px at 85% 90%, rgba(49,46,129,.35), transparent 60%),
+        linear-gradient(180deg, rgba(2,6,23,.2), rgba(2,6,23,.55));
+    }
+
+    /* ===== Glass 카드 ===== */
     .card{
-      width:min(780px, 92vw); padding:32px 28px; border-radius:24px; text-align:center;
-      background:rgba(255,255,255,0.04); backdrop-filter: blur(6px);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+      width:min(820px, 92vw);
+      padding:32px 28px;
+      border-radius:28px;
+      background:var(--glass);
+      -webkit-backdrop-filter: saturate(1.5) blur(16px);
+      backdrop-filter: saturate(1.5) blur(16px);
+      border:1px solid var(--border);
+      box-shadow:
+        0 10px 30px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.18),
+        inset 0 0 0 1px rgba(255,255,255,.06);
+      text-align:center;
       position:relative;
     }
-    .label{font-size:14px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase}
-    .timer{font-variant-numeric:tabular-nums; font-size:clamp(48px, 10vw, 112px); line-height:1; letter-spacing:2px; margin:8px 0 16px; text-shadow:0 8px 28px rgba(0,0,0,.4)}
-    .quote{font-size:clamp(18px,3.2vw,26px); line-height:1.5; margin:14px 0 8px}
-    .hint{color:var(--muted); font-size:14px; margin-top:6px}
-    .row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:20px}
-    button{
-      cursor:pointer; border:0; border-radius:999px; padding:12px 18px; background:rgba(255,255,255,0.08);
-      color:var(--fg); font-size:15px; transition:transform .06s, background .2s, box-shadow .2s;
-      box-shadow:0 8px 20px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.08)
-    }
-    button:hover{background:rgba(255,255,255,.12)}
-    button:active{transform:translateY(1px) scale(.98)}
-    .primary{background:linear-gradient(90deg,#22d3ee,#38bdf8); color:#0b1220; box-shadow:0 10px 30px rgba(56,189,248,.35)}
-    .footer{margin-top:22px; font-size:13px; color:var(--muted)}
-    .done{color:#4ade80}
 
-    /* 소리 토글 */
+    .label{
+      font-size:13px; letter-spacing:.12em; text-transform:uppercase;
+      color:var(--muted);
+    }
+    .timer{
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(48px, 10vw, 112px);
+      line-height:1; letter-spacing:2px; margin:8px 0 16px;
+      text-shadow: 0 10px 30px rgba(0,0,0,.45);
+    }
+    .quote{
+      font-size: clamp(18px, 3.2vw, 26px);
+      line-height:1.5; margin: 6px 0 2px;
+      min-height: 2.8em;
+      transition: opacity .6s ease;
+    }
+    .quote.fade-out{ opacity:0 }
+    .hint{ color:rgba(229,231,235,.75); font-size:14px; margin-top:8px }
+    .row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:20px }
+
+    button{
+      cursor:pointer; border:0; border-radius:999px; padding:12px 18px;
+      background:rgba(255,255,255,.10);
+      color:var(--fg); font-size:15px;
+      transition: transform .06s ease, background .2s ease, box-shadow .2s ease;
+      box-shadow: 0 10px 22px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.08);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+    button:hover{ background:rgba(255,255,255,.14) }
+    button:active{ transform: translateY(1px) scale(.98) }
+    .primary{
+      background:linear-gradient(90deg, rgba(147,197,253,.85), rgba(99,102,241,.85));
+      color:#0b1020;
+      box-shadow: 0 12px 30px rgba(99,102,241,.45);
+    }
+    .footer{ margin-top:22px; font-size:13px; color:rgba(229,231,235,.7) }
+    .done{ color:#86efac }
+
+    /* ===== 소리 토글(작은 아이콘) ===== */
     .audio-toggle{
-      position:absolute; top:12px; right:12px; width:40px; height:40px; border-radius:12px;
-      background:rgba(255,255,255,.08); display:grid; place-items:center;
-      box-shadow:0 6px 18px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.08);
+      position:absolute; top:12px; right:12px; width:42px; height:42px;
+      border-radius:14px; background:rgba(255,255,255,.10);
+      display:grid; place-items:center;
+      border:1px solid var(--border);
+      box-shadow:0 10px 22px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.06);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     }
-    .audio-toggle svg{width:22px; height:22px; fill:currentColor; color:var(--fg)}
+    .audio-toggle svg{ width:22px; height:22px; fill:currentColor; color:var(--fg) }
     .audio-badge{
-      position:absolute; top:60px; right:12px; font-size:12px; color:var(--muted); background:rgba(0,0,0,.35);
-      padding:6px 10px; border-radius:999px; backdrop-filter: blur(4px);
+      position:absolute; top:62px; right:12px; font-size:12px; color:#e2e8f0;
+      background:rgba(2,6,23,.55);
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.18);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     }
-    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0}
+
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0 }
   </style>
 </head>
 <body>
+  <!-- 배경 영상 -->
+  <div class="bg" aria-hidden="true">
+    <video id="bgVideo" src="background.mp4" autoplay muted loop playsinline preload="metadata"></video>
+  </div>
+
+  <!-- 본문 카드 -->
   <main class="card" role="main" aria-live="polite">
+    <!-- 소리 토글 -->
     <button id="audioBtn" class="audio-toggle" aria-label="소리 토글" title="소리 켜기/끄기">
-      <!-- 기본: 음소거 아이콘 -->
+      <!-- 음소거 아이콘 -->
       <svg id="icon-muted" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 12a4.5 4.5 0 0 1-1.12 2.98l1.42 1.42A6.5 6.5 0 0 0 18.5 12a6.5 6.5 0 0 0-1.7-4.4l-1.42 1.42A4.5 4.5 0 0 1 16.5 12Zm-3-7.5-4 4H6v7h3.5l4 4V4.5ZM19 3 3 19l1.5 1.5L20.5 4.5 19 3Z"/></svg>
       <!-- 소리 켜짐 아이콘 -->
       <svg id="icon-sound" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M14 3.23v17.54c0 .46-.54.68-.85.36l-4.82-4.82H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h3.33l4.82-4.82c.31-.31.85-.09.85.36ZM16.5 12a4.5 4.5 0 0 0-1.12-2.98l1.42-1.42A6.5 6.5 0 0 1 18.5 12a6.5 6.5 0 0 1-1.7 4.4l-1.42-1.42A4.5 4.5 0 0 0 16.5 12Zm2.5 0a9 9 0 0 1-2.47 6.2l1.42 1.42A11 11 0 0 0 22 12a11 11 0 0 0-2.05-6.32l-1.45 1.45A9 9 0 0 1 19 12Z"/></svg>
     </button>
     <div id="audioBadge" class="audio-badge" aria-live="polite">소리: 꺼짐</div>
 
-    <span class="sr-only" id="pageDesc">이 페이지는 5분 타이머와 함께 한국어 안내 문장을 보여주고, 잔잔한 자연 소리를 재생합니다.</span>
+    <span class="sr-only" id="pageDesc">이 페이지는 배경 영상과 함께 5분 타이머, 한국어 안내 문구, 잔잔한 자연 소리를 제공합니다.</span>
 
     <div class="label">천천히</div>
     <div id="timer" class="timer" aria-label="카운트다운">05:00</div>
@@ -79,18 +149,18 @@
 
     <div id="footer" class="footer">조용히 머물러요. 나머지는 잠시 미뤄두어도 됩니다.</div>
 
-    <!-- 오디오 엘리먼트(보이지 않게) -->
+    <!-- 보이지 않는 오디오 -->
     <audio id="ambience" preload="auto" loop playsinline></audio>
   </main>
 
   <script>
     // ===== 설정 =====
     const TOTAL = 300;                 // 5분(초)
-    const QUOTE_INTERVAL = 30_000;     // 문구 자동 변경 간격
-    const TRACK_CHANGE_EVERY = 120_000;// 트랙 교체 간격(원하는 경우)
-    const START_MUTED = true;          // 정책상 자동재생은 보통 음소거로 시작
-    const VOLUME_TARGET = 0.35;        // 평소 볼륨
-    const VOLUME_FADE_MS = 800;        // 페이드 시간
+    const QUOTE_INTERVAL = 30_000;     // 문구 자동 변경
+    const TRACK_CHANGE_EVERY = 120_000;// 배경음 교체 간격
+    const START_MUTED = true;          // 자동재생 정책상 기본 음소거
+    const VOLUME_TARGET = 0.35;
+    const VOLUME_FADE_MS = 800;
 
     // ===== 엘리먼트 =====
     const timerEl = document.getElementById('timer');
@@ -104,7 +174,7 @@
     const audioBadge = document.getElementById('audioBadge');
     const audioEl = document.getElementById('ambience');
 
-    // ===== 문구(한국어) =====
+    // ===== 한국어 문구 =====
     const quotes = [
       "지금 숨이 들어가고 나가는 걸 느껴보세요.",
       "주변의 가장 조용한 소리를 찾아보세요.",
@@ -128,7 +198,7 @@
       "하루를 서두르지 않아도 괜찮습니다."
     ];
 
-    // ===== 오디오 트랙 목록(같은 폴더에 두세요) =====
+    // ===== 배경음 파일(같은 폴더) =====
     const tracks = [
       "beach-waves(chosic.com).mp3",
       "bonnyorbit__forest-river-with-whirls(chosic.com).mp3",
@@ -143,16 +213,22 @@
     let tickId = null;
     let quoteId = null;
     let trackSwapId = null;
-
-    // ===== 함수들 =====
     let lastIdx = -1;
+
+    // ===== 문구 로직(자동 페이드) =====
     function nextQuote() {
       if (!quotes.length) return;
       let idx;
       do { idx = Math.floor(Math.random() * quotes.length); }
       while (idx === lastIdx && quotes.length > 1);
       lastIdx = idx;
-      quoteEl.textContent = quotes[idx];
+
+      // 부드러운 전환
+      quoteEl.classList.add('fade-out');
+      setTimeout(()=>{
+        quoteEl.textContent = quotes[idx];
+        quoteEl.classList.remove('fade-out');
+      }, 250);
     }
 
     function format(seconds){
@@ -194,7 +270,6 @@
 
       quoteId = setInterval(nextQuote, QUOTE_INTERVAL);
 
-      // 트랙 자동 교체(선택): 2분마다 다른 환경음으로
       trackSwapId = setInterval(()=>{
         if (!audioEl.muted && !audioEl.paused) pickAndPlayTrack(true);
       }, TRACK_CHANGE_EVERY);
@@ -217,7 +292,6 @@
         safePlay();
         fadeTo(VOLUME_TARGET, VOLUME_FADE_MS);
       } else {
-        // 간단한 크로스페이드: 먼저 줄이고 바꾼 뒤 올리기
         fadeTo(0, VOLUME_FADE_MS).then(()=>{
           audioEl.src = newSrc;
           audioEl.currentTime = 0;
@@ -226,12 +300,7 @@
         });
       }
     }
-
-    function safePlay(){
-      // 자동재생 정책 대응: 음소거 상태 or 첫 사용자 상호작용 후 재생
-      audioEl.play().catch(()=>{/* 무시 */});
-    }
-
+    function safePlay(){ audioEl.play().catch(()=>{}); }
     function fadeTo(target, ms){
       return new Promise(resolve=>{
         const start = audioEl.volume;
@@ -258,14 +327,12 @@
       }
     }
 
-    // ===== 이벤트 바인딩 =====
+    // ===== 이벤트 =====
     restartBtn.addEventListener('click', start);
     nextQuoteBtn.addEventListener('click', nextQuote);
-    audioBtn.addEventListener('click', ()=>{
-      setAudioState(!audioEl.muted);
-    });
+    audioBtn.addEventListener('click', ()=> setAudioState(!audioEl.muted));
 
-    // 약한 상호작용 힌트(너무 많이 건드리면)
+    // 가벼운 상호작용 힌트
     let interactTimeout;
     const gentleHint = ()=>{
       clearTimeout(interactTimeout);
@@ -277,20 +344,19 @@
     ["mousemove","keydown","touchstart"].forEach(ev=>document.addEventListener(ev, gentleHint, {passive:true}));
 
     // ===== 초기화 =====
-    // 오디오 초기 상태(로컬 저장 반영)
     const saved = localStorage.getItem("quiet5.muted");
     const startMuted = saved === null ? START_MUTED : (saved === "true");
-    audioEl.volume = 0; // 처음엔 0에서 시작해 페이드 인
+    audioEl.volume = 0;
     setAudioState(startMuted);
-    if (!startMuted) pickAndPlayTrack(false); // 음소거가 아니면 즉시 재생
+    if (!startMuted) pickAndPlayTrack(false);
 
-    // iOS 사파리 대응: 첫 탭에 맞춰 재생 시도
+    // iOS 첫 탭에서 재생 허용
     window.addEventListener('pointerdown', ()=>{
-      if (!audioEl.src) pickAndPlayTrack(false);
-      else safePlay();
+      if (!audioEl.src && !audioEl.muted) pickAndPlayTrack(false);
+      else if (!audioEl.muted) safePlay();
     }, {once:true});
 
-    // 타이머 자동 시작
+    // 타이머 시작
     start();
   </script>
 </body>
