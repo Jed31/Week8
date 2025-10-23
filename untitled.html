@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>5분, 그냥 숨 쉬기</title>
+  <style>
+    :root{
+      --bg1:#0f172a; --bg2:#1e293b; --fg:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, #0b1224, transparent),
+                  radial-gradient(900px 700px at 80% 90%, #0a1a2f, transparent),
+                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      display:grid; place-items:center;
+      user-select:none;
+    }
+    .card{
+      width:min(780px, 92vw); padding:32px 28px; border-radius:24px; text-align:center;
+      background:rgba(255,255,255,0.04); backdrop-filter: blur(6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+      position:relative;
+    }
+    .label{font-size:14px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase}
+    .timer{font-variant-numeric:tabular-nums; font-size:clamp(48px, 10vw, 112px); line-height:1; letter-spacing:2px; margin:8px 0 16px; text-shadow:0 8px 28px rgba(0,0,0,.4)}
+    .quote{font-size:clamp(18px,3.2vw,26px); line-height:1.5; margin:14px 0 8px}
+    .hint{color:var(--muted); font-size:14px; margin-top:6px}
+    .row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:20px}
+    button{
+      cursor:pointer; border:0; border-radius:999px; padding:12px 18px; background:rgba(255,255,255,0.08);
+      color:var(--fg); font-size:15px; transition:transform .06s, background .2s, box-shadow .2s;
+      box-shadow:0 8px 20px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.08)
+    }
+    button:hover{background:rgba(255,255,255,.12)}
+    button:active{transform:translateY(1px) scale(.98)}
+    .primary{background:linear-gradient(90deg,#22d3ee,#38bdf8); color:#0b1220; box-shadow:0 10px 30px rgba(56,189,248,.35)}
+    .footer{margin-top:22px; font-size:13px; color:var(--muted)}
+    .done{color:#4ade80}
+
+    /* 소리 토글 */
+    .audio-toggle{
+      position:absolute; top:12px; right:12px; width:40px; height:40px; border-radius:12px;
+      background:rgba(255,255,255,.08); display:grid; place-items:center;
+      box-shadow:0 6px 18px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+    .audio-toggle svg{width:22px; height:22px; fill:currentColor; color:var(--fg)}
+    .audio-badge{
+      position:absolute; top:60px; right:12px; font-size:12px; color:var(--muted); background:rgba(0,0,0,.35);
+      padding:6px 10px; border-radius:999px; backdrop-filter: blur(4px);
+    }
+    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0}
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-live="polite">
+    <button id="audioBtn" class="audio-toggle" aria-label="소리 토글" title="소리 켜기/끄기">
+      <!-- 기본: 음소거 아이콘 -->
+      <svg id="icon-muted" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 12a4.5 4.5 0 0 1-1.12 2.98l1.42 1.42A6.5 6.5 0 0 0 18.5 12a6.5 6.5 0 0 0-1.7-4.4l-1.42 1.42A4.5 4.5 0 0 1 16.5 12Zm-3-7.5-4 4H6v7h3.5l4 4V4.5ZM19 3 3 19l1.5 1.5L20.5 4.5 19 3Z"/></svg>
+      <!-- 소리 켜짐 아이콘 -->
+      <svg id="icon-sound" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M14 3.23v17.54c0 .46-.54.68-.85.36l-4.82-4.82H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h3.33l4.82-4.82c.31-.31.85-.09.85.36ZM16.5 12a4.5 4.5 0 0 0-1.12-2.98l1.42-1.42A6.5 6.5 0 0 1 18.5 12a6.5 6.5 0 0 1-1.7 4.4l-1.42-1.42A4.5 4.5 0 0 0 16.5 12Zm2.5 0a9 9 0 0 1-2.47 6.2l1.42 1.42A11 11 0 0 0 22 12a11 11 0 0 0-2.05-6.32l-1.45 1.45A9 9 0 0 1 19 12Z"/></svg>
+    </button>
+    <div id="audioBadge" class="audio-badge" aria-live="polite">소리: 꺼짐</div>
+
+    <span class="sr-only" id="pageDesc">이 페이지는 5분 타이머와 함께 한국어 안내 문장을 보여주고, 잔잔한 자연 소리를 재생합니다.</span>
+
+    <div class="label">천천히</div>
+    <div id="timer" class="timer" aria-label="카운트다운">05:00</div>
+    <div id="quote" class="quote">지금 숨이 들어가고 나가는 걸 느껴보세요.</div>
+    <div class="hint">5분 동안은 아무것도 하지 않아도 괜찮습니다. 그냥 알아차림.</div>
+
+    <div class="row">
+      <button id="restartBtn" class="primary">5분 다시 시작</button>
+      <button id="nextQuoteBtn" title="문구 바꾸기">문구 바꾸기</button>
+    </div>
+
+    <div id="footer" class="footer">조용히 머물러요. 나머지는 잠시 미뤄두어도 됩니다.</div>
+
+    <!-- 오디오 엘리먼트(보이지 않게) -->
+    <audio id="ambience" preload="auto" loop playsinline></audio>
+  </main>
+
+  <script>
+    // ===== 설정 =====
+    const TOTAL = 300;                 // 5분(초)
+    const QUOTE_INTERVAL = 30_000;     // 문구 자동 변경 간격
+    const TRACK_CHANGE_EVERY = 120_000;// 트랙 교체 간격(원하는 경우)
+    const START_MUTED = true;          // 정책상 자동재생은 보통 음소거로 시작
+    const VOLUME_TARGET = 0.35;        // 평소 볼륨
+    const VOLUME_FADE_MS = 800;        // 페이드 시간
+
+    // ===== 엘리먼트 =====
+    const timerEl = document.getElementById('timer');
+    const quoteEl = document.getElementById('quote');
+    const footerEl = document.getElementById('footer');
+    const restartBtn = document.getElementById('restartBtn');
+    const nextQuoteBtn = document.getElementById('nextQuoteBtn');
+    const audioBtn = document.getElementById('audioBtn');
+    const iconMuted = document.getElementById('icon-muted');
+    const iconSound = document.getElementById('icon-sound');
+    const audioBadge = document.getElementById('audioBadge');
+    const audioEl = document.getElementById('ambience');
+
+    // ===== 문구(한국어) =====
+    const quotes = [
+      "지금 숨이 들어가고 나가는 걸 느껴보세요.",
+      "주변의 가장 조용한 소리를 찾아보세요.",
+      "몸의 무게가 바닥에 닿는 감각을 알아차려보세요.",
+      "오늘 고마웠던 일을 하나 떠올려볼까요?",
+      "창밖의 색을 세 가지 이상 찾아보세요.",
+      "어깨에 힘을 살짝 빼볼까요?",
+      "마음속 파도가 잠잠해질 때까지 기다려요.",
+      "한 번 더 깊게 들이마시고, 천천히 내쉬어보세요.",
+      "지금 이 순간, 무엇이 가장 편안한가요?",
+      "빛과 그림자의 경계를 바라보세요.",
+      "당신의 속도를, 당신이 정해도 괜찮아요.",
+      "생각이 떠오르면, 하늘의 구름처럼 흘려보내요.",
+      "오늘 마음에 남은 문장을 하나 떠올려보세요.",
+      "손가락 끝의 온도를 느껴보세요.",
+      "눈을 감고 세 박자 들숨, 다섯 박자 날숨.",
+      "지금 듣는 소리를 가까이–멀리로 나눠보세요.",
+      "작은 친절 하나를 떠올리고 미소 지어볼까요?",
+      "오늘의 자신에게 짧게 인사하기: 잘 하고 있어.",
+      "숨결이 당신을 현재로 데려옵니다.",
+      "하루를 서두르지 않아도 괜찮습니다."
+    ];
+
+    // ===== 오디오 트랙 목록(같은 폴더에 두세요) =====
+    const tracks = [
+      "beach-waves(chosic.com).mp3",
+      "bonnyorbit__forest-river-with-whirls(chosic.com).mp3",
+      "Cicadas-chosic.com_.mp3",
+      "dcpoke__birds-singing-03(chosic.com).mp3",
+      "kaydinhamby__water-trickling(chosic.com).mp3"
+    ];
+    let currentTrack = -1;
+
+    // ===== 상태 =====
+    let remaining = TOTAL;
+    let tickId = null;
+    let quoteId = null;
+    let trackSwapId = null;
+
+    // ===== 함수들 =====
+    let lastIdx = -1;
+    function nextQuote() {
+      if (!quotes.length) return;
+      let idx;
+      do { idx = Math.floor(Math.random() * quotes.length); }
+      while (idx === lastIdx && quotes.length > 1);
+      lastIdx = idx;
+      quoteEl.textContent = quotes[idx];
+    }
+
+    function format(seconds){
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function setRunningUI(running){
+      restartBtn.textContent = running ? "5분 다시 시작" : "다시 해보기";
+      nextQuoteBtn.disabled = false;
+    }
+
+    function start(){
+      clearInterval(tickId);
+      clearInterval(quoteId);
+      clearInterval(trackSwapId);
+
+      remaining = TOTAL;
+      timerEl.classList.remove('done');
+      footerEl.textContent = "조용히 머물러요. 나머지는 잠시 미뤄두어도 됩니다.";
+      timerEl.textContent = format(remaining);
+      nextQuote();
+
+      tickId = setInterval(()=>{
+        remaining--;
+        timerEl.textContent = format(remaining);
+        if(remaining <= 0){
+          clearInterval(tickId);
+          clearInterval(quoteId);
+          clearInterval(trackSwapId);
+          timerEl.textContent = "00:00";
+          timerEl.classList.add('done');
+          quoteEl.textContent = "끝! 잘하셨어요. 5분을 온전히 보냈습니다.";
+          footerEl.textContent = "이 호흡을 일상의 1분으로 가져가 볼까요?";
+          setRunningUI(false);
+        }
+      }, 1000);
+
+      quoteId = setInterval(nextQuote, QUOTE_INTERVAL);
+
+      // 트랙 자동 교체(선택): 2분마다 다른 환경음으로
+      trackSwapId = setInterval(()=>{
+        if (!audioEl.muted && !audioEl.paused) pickAndPlayTrack(true);
+      }, TRACK_CHANGE_EVERY);
+
+      setRunningUI(true);
+    }
+
+    // ===== 오디오 제어 =====
+    function pickAndPlayTrack(crossfade=false){
+      if (!tracks.length) return;
+      let idx;
+      do { idx = Math.floor(Math.random() * tracks.length); }
+      while (idx === currentTrack && tracks.length > 1);
+      currentTrack = idx;
+
+      const newSrc = tracks[idx];
+      if (!crossfade){
+        audioEl.src = newSrc;
+        audioEl.currentTime = 0;
+        safePlay();
+        fadeTo(VOLUME_TARGET, VOLUME_FADE_MS);
+      } else {
+        // 간단한 크로스페이드: 먼저 줄이고 바꾼 뒤 올리기
+        fadeTo(0, VOLUME_FADE_MS).then(()=>{
+          audioEl.src = newSrc;
+          audioEl.currentTime = 0;
+          safePlay();
+          fadeTo(VOLUME_TARGET, VOLUME_FADE_MS);
+        });
+      }
+    }
+
+    function safePlay(){
+      // 자동재생 정책 대응: 음소거 상태 or 첫 사용자 상호작용 후 재생
+      audioEl.play().catch(()=>{/* 무시 */});
+    }
+
+    function fadeTo(target, ms){
+      return new Promise(resolve=>{
+        const start = audioEl.volume;
+        const delta = target - start;
+        const t0 = performance.now();
+        function step(t){
+          const p = Math.min(1, (t - t0) / ms);
+          audioEl.volume = start + delta * p;
+          if (p < 1) requestAnimationFrame(step); else resolve();
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    function setAudioState(muted){
+      audioEl.muted = muted;
+      iconMuted.style.display = muted ? "block" : "none";
+      iconSound.style.display = muted ? "none" : "block";
+      audioBadge.textContent = `소리: ${muted ? "꺼짐" : "켜짐"}`;
+      localStorage.setItem("quiet5.muted", String(muted));
+      if (!muted){
+        if (!audioEl.src) pickAndPlayTrack(false);
+        else { safePlay(); fadeTo(VOLUME_TARGET, VOLUME_FADE_MS); }
+      }
+    }
+
+    // ===== 이벤트 바인딩 =====
+    restartBtn.addEventListener('click', start);
+    nextQuoteBtn.addEventListener('click', nextQuote);
+    audioBtn.addEventListener('click', ()=>{
+      setAudioState(!audioEl.muted);
+    });
+
+    // 약한 상호작용 힌트(너무 많이 건드리면)
+    let interactTimeout;
+    const gentleHint = ()=>{
+      clearTimeout(interactTimeout);
+      footerEl.textContent = "부드럽게. 잠시만 가만히 있어볼까요?";
+      interactTimeout = setTimeout(()=>{
+        footerEl.textContent = "조용히 머물러요. 나머지는 잠시 미뤄두어도 됩니다.";
+      }, 3000);
+    };
+    ["mousemove","keydown","touchstart"].forEach(ev=>document.addEventListener(ev, gentleHint, {passive:true}));
+
+    // ===== 초기화 =====
+    // 오디오 초기 상태(로컬 저장 반영)
+    const saved = localStorage.getItem("quiet5.muted");
+    const startMuted = saved === null ? START_MUTED : (saved === "true");
+    audioEl.volume = 0; // 처음엔 0에서 시작해 페이드 인
+    setAudioState(startMuted);
+    if (!startMuted) pickAndPlayTrack(false); // 음소거가 아니면 즉시 재생
+
+    // iOS 사파리 대응: 첫 탭에 맞춰 재생 시도
+    window.addEventListener('pointerdown', ()=>{
+      if (!audioEl.src) pickAndPlayTrack(false);
+      else safePlay();
+    }, {once:true});
+
+    // 타이머 자동 시작
+    start();
+  </script>
+</body>
+</html>
